@@ -195,6 +195,7 @@ void *clerk_entry(void * clerkNum){
 	return NULL;
 }
 
+
 int main(int argc, char* argv[]) {
 	if (argc != 2) {
 		printf("Usage: ACS <input file>\n");
