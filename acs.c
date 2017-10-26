@@ -38,9 +38,11 @@ int clerk_info[2] = {0,1};  //list of clerks (clerkid)
 
 struct timeval init_time; // record the simulation start time; No need to use mutex_lock when reading this variable since the value would not be changed by thread once the initial time was set.
 double overall_waiting_time; // used to add up the overall waiting time for all customers, every customer add their own waiting time to this variable, mutex_lock is necessary.
-int queue_length[NQUEUE];// real-time queue length information; mutex_lock needed
 
+int queue_length[NQUEUE];// real-time queue length information; mutex_lock needed
 int C = -1; // to check which clerk awakes customer
+pthread_mutex_t mutex_queue_length;
+pthread_mutex_t mutex_C;
 
 pthread_t customer_threads[MAX_CUSTOMER];
 pthread_t clerk_threads[2];
@@ -79,24 +81,28 @@ void * customer_entry(void * cus_info){
 
 	fprintf(stdout, "A customer arrives: customer ID %2d. \n", p_myInfo->user_id);
 
-	/* pick the shortest queue to enter into */
   int i;
+	/* pick the shortest queue to enter into */
   int min_queue_length = MAX_CUSTOMER+1;
   int shortest_queue;
+
+  pthread_mutex_lock(&mutex_queue_length);
   for (i = 0; i < NQUEUE; i++) {
-    printf("queue length of queue %d is %d\n",i, queue_length[i]);
+    //printf("CUSTOMER - queue length of queue %d is %d\n",i, queue_length[i]);
     if (queue_length[i] < min_queue_length) {
       min_queue_length = queue_length[i];
       shortest_queue = i;
     }
   }
+  queue_length[shortest_queue]++;
+  pthread_mutex_unlock(&mutex_queue_length);
 
 	pthread_mutex_lock(&mutex_queue[shortest_queue]);
+
 	fprintf(stdout, "A customer enters a queue: the queue ID %1d, and length of the queue %2d. \n", shortest_queue, queue_length[shortest_queue]);
   /* insert customer into queue */
-  //printf("queue length before enqueue: %d\n", queue_length[shortest_queue]);
-  queue_length[shortest_queue]++;
-  //printf("queue length after enqueue: %d\n", queue_length[shortest_queue]);
+
+  //printf("CUSTOMER - queue length after enqueue: %d\n", queue_length[shortest_queue]);
   p_myInfo->waiting_time_start = getTimeDifference();
 	// customers are waiting for a clerk
 	pthread_cond_wait(&convar_queue[shortest_queue], &mutex_queue[shortest_queue]);
@@ -107,13 +113,16 @@ void * customer_entry(void * cus_info){
 
   /* Try to figure out which clerk awaked me, because you need to print the clerk Id information */
   int clerk;
+  pthread_mutex_lock(&mutex_C);
   if (C == 0) { //clerk 0 awakes me
     clerk = 0;
     C = -1;
-  } else if (C == 1) {  //clerk 1 awakes me
+  }
+  if (C == 1) {  //clerk 1 awakes me
     clerk = 1;
     C = -1;
   }
+  pthread_mutex_unlock(&mutex_C);
 
 	/* get the current machine time; updates the overall_waiting_time*/
 	fprintf(stdout, "A clerk starts serving a customer: start time %.2f, the customer ID %2d, the clerk ID %1d. \n", getTimeDifference(), p_myInfo->user_id, clerk);
@@ -142,32 +151,38 @@ void *clerk_entry(void * clerkNum){
     int i;
     int max_queue_length = -1;
     int longest_queue;
+    pthread_mutex_lock(&mutex_queue_length);
     for (i = 0; i < NQUEUE; i++) {
+      //printf("CLERK - queue length of queue %d is %d\n",i, queue_length[i]);
       if (queue_length[i] > max_queue_length) {
         max_queue_length = queue_length[i];
         longest_queue = i;
       }
     }
 
-    if (max_queue_length == 0) {
+    if (queue_length[longest_queue] == 0) {
       usleep(10);
+      pthread_mutex_unlock(&mutex_queue_length);
+      break;
     } else {  // max_queue_length > 0
-  		pthread_mutex_lock(&mutex_queue[longest_queue]);
-  		/* updates the queue_length, mutex_lock needed */
       queue_length[longest_queue]--;
+      pthread_mutex_unlock(&mutex_queue_length);
 
+      pthread_mutex_lock(&mutex_queue[longest_queue]);
   		/* remove customer from queue */
-      //remove customer by calling cond_signal???
-
   		// record clerk id using global var
-      if (C == -1) {
-        C = *((int*)clerkNum);  //cast void pointer to int
-        // Awake the customer (the one enter into the queue first) from the longest queue (notice the customer he can get served now)
-    		pthread_cond_signal(&convar_queue[longest_queue]);
-      } else {
-        usleep(10);
-        // TODO: check C again
+      pthread_mutex_lock(&mutex_C);
+      while (1) {
+        if (C == -1) {
+          C = *((int*)clerkNum);  //cast void pointer to int
+          // Awake the customer (the one enter into the queue first) from the longest queue (notice the customer he can get served now)
+      		pthread_cond_signal(&convar_queue[longest_queue]);
+          break;
+        } else {
+          usleep(10);
+        }
       }
+      pthread_mutex_unlock(&mutex_C);
 
   		// unlock mutex so that other customers can get in
   		pthread_mutex_unlock(&mutex_queue[longest_queue]);
