@@ -84,6 +84,7 @@ void * customer_entry(void * cus_info){
   int min_queue_length = MAX_CUSTOMER+1;
   int shortest_queue;
   for (i = 0; i < NQUEUE; i++) {
+    printf("queue length of queue %d is %d\n",i, queue_length[i]);
     if (queue_length[i] < min_queue_length) {
       min_queue_length = queue_length[i];
       shortest_queue = i;
@@ -93,7 +94,9 @@ void * customer_entry(void * cus_info){
 	pthread_mutex_lock(&mutex_queue[shortest_queue]);
 	fprintf(stdout, "A customer enters a queue: the queue ID %1d, and length of the queue %2d. \n", shortest_queue, queue_length[shortest_queue]);
   /* insert customer into queue */
+  //printf("queue length before enqueue: %d\n", queue_length[shortest_queue]);
   queue_length[shortest_queue]++;
+  //printf("queue length after enqueue: %d\n", queue_length[shortest_queue]);
   p_myInfo->waiting_time_start = getTimeDifference();
 	// customers are waiting for a clerk
 	pthread_cond_wait(&convar_queue[shortest_queue], &mutex_queue[shortest_queue]);
@@ -279,6 +282,5 @@ int main(int argc, char* argv[]) {
 	}
   double avg_waiting_time = overall_waiting_time/NCustomers;
   fprintf(stdout, "The average waiting time for all customers in the system is %.2f seconds. \n", avg_waiting_time);
-
 	return 0;
 }
