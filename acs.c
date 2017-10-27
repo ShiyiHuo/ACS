@@ -127,9 +127,9 @@ void * customer_entry(void * cus_info){
 }
 
 int findTheLongestQueue(int clerkId){
-	
+
 	int i, qnum = 0, max_queue_length = 0;
-	
+
 	pthread_mutex_lock(&mutex_C);
 	{
 		if(C != -1){
@@ -140,7 +140,7 @@ int findTheLongestQueue(int clerkId){
 		{
 			for(i = 0; i < NQUEUE; i++){
 				if(i == 0){
-					max_queue_length = queue_length[0];	
+					max_queue_length = queue_length[0];
 				}
 				else{
 					if(max_queue_length < queue_length[i]){
@@ -165,24 +165,24 @@ int findTheLongestQueue(int clerkId){
 }
 
 void *clerk_entry(void * clerkNum){
-	
+
 	int longest_queue;
 	int myClerkId = *(int *)clerkNum;
-  
+
 	while(TRUE){
-		
+
 		if((longest_queue = findTheLongestQueue(myClerkId)) == -1){
 			usleep(100);
 			continue;
 		}
-		
+
 		pthread_mutex_lock(&mutex_queue[longest_queue]);
 		{
 			pthread_cond_signal(&convar_queue[longest_queue]);
 		}
 		pthread_mutex_unlock(&mutex_queue[longest_queue]);
-		
-		
+
+
 		pthread_mutex_lock(&mutex_clerk[myClerkId]);
 		{
 			pthread_cond_wait(&convar_clerk[myClerkId], &mutex_clerk[myClerkId]);
@@ -288,6 +288,7 @@ int main(int argc, char* argv[]) {
   overall_waiting_time = 0.0;
   for(i = 0; i < NCustomers; i++) { // number of customers
 	   overall_waiting_time += customer_list[i].waiting_time_total;
+     printf("customer %d's waiting time: %f\n",customer_list[i].user_id, customer_list[i].waiting_time_total);
 	}
   double avg_waiting_time = overall_waiting_time/NCustomers;
   fprintf(stdout, "The average waiting time for all customers in the system is %.2f seconds. \n", avg_waiting_time);
