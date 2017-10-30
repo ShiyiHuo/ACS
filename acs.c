@@ -6,14 +6,14 @@
 #include <sys/time.h>
 
 
-typedef struct customer_info{ /// use this struct to record the customer information read from customers.txt
+typedef struct customer{ /// use this struct to record the customer information read from customers.txt
   int user_id;
 	int service_time;
 	int arrival_time;
   double waiting_time_start;
   double waiting_time_end;
   double waiting_time_total;
-} customer_info;
+} customer;
 
 /* global variables */
 #define TRUE 1
@@ -24,8 +24,8 @@ typedef struct customer_info{ /// use this struct to record the customer informa
 #define NCLERK 2
 #define TO_UTIME 1000000
 
-customer_info customer_list[MAX_CUSTOMER];  //list of customers
-int clerk_info[2] = {0,1};  //list of clerks (clerkid)
+customer customer_list[MAX_CUSTOMER];  //list of customers
+int clerk_info[NCLERK] = {0,1};  //list of clerks (clerkid)
 
 struct timeval init_time; // record the simulation start time; No need to use mutex_lock when reading this variable since the value would not be changed by thread once the initial time was set.
 double overall_waiting_time; // used to add up the overall waiting time for all customers, every customer add their own waiting time to this variable, mutex_lock is necessary.
@@ -66,7 +66,7 @@ double getTimeDifference() {
 // function entry for customer threads
 void * customer_entry(void * cus_info){
 	// a new customer comes in
-	struct customer_info * p_myInfo = (struct customer_info *) cus_info;
+	struct customer * p_myInfo = (struct customer *) cus_info;
 
 	usleep((p_myInfo->arrival_time)*TO_UTIME/10); //sleep as long as arrival time
 
