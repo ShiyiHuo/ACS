@@ -66,15 +66,17 @@ int findShortestQueue(){
 	int min_queue_length = MAX_CUSTOMER+1;
 	int qnum;
 	pthread_mutex_lock(&mutex_queue_length);
-	int i;
-	for (i = 0; i < NQUEUE; i++) {
-		//printf("CUSTOMER - queue length of queue %d is %d\n",i, queue_length[i]);
-		if (queue_length[i] < min_queue_length) {
-			min_queue_length = queue_length[i];
-			qnum = i;
+	{
+		int i;
+		for (i = 0; i < NQUEUE; i++) {
+			//printf("CUSTOMER - queue length of queue %d is %d\n",i, queue_length[i]);
+			if (queue_length[i] < min_queue_length) {
+				min_queue_length = queue_length[i];
+				qnum = i;
+			}
 		}
+		queue_length[qnum]++;
 	}
-	queue_length[qnum]++;
   	pthread_mutex_unlock(&mutex_queue_length);
 
   	return qnum;
@@ -89,12 +91,15 @@ void * customer_entry(void * cus_info){
 	int shortest_queue = findShortestQueue();
 
 	pthread_mutex_lock(&mutex_queue[shortest_queue]);
-	fprintf(stdout, "A customer enters a queue: the queue ID %1d, and length of the queue %2d. \n", shortest_queue, queue_length[shortest_queue]);
-	p_myInfo->waiting_time_start = getTimeDifference();
-	// customers are waiting for a clerk
-	pthread_cond_wait(&convar_queue[shortest_queue], &mutex_queue[shortest_queue]);
-	//Now pthread_cond_wait returned, customer was awaked by one of the clerks
+	{
+		fprintf(stdout, "A customer enters a queue: the queue ID %1d, and length of the queue %2d. \n", shortest_queue, queue_length[shortest_queue]);
+		p_myInfo->waiting_time_start = getTimeDifference();
+		// customers are waiting for a clerk
+		pthread_cond_wait(&convar_queue[shortest_queue], &mutex_queue[shortest_queue]);
+		//Now pthread_cond_wait returned, customer was awaked by one of the clerks
+	}
 	pthread_mutex_unlock(&mutex_queue[shortest_queue]);
+	
 	p_myInfo->waiting_time_end = getTimeDifference();
 	p_myInfo->waiting_time_total = p_myInfo->waiting_time_end - p_myInfo->waiting_time_start;
 
@@ -102,12 +107,14 @@ void * customer_entry(void * cus_info){
   /* Try to figure out which clerk awaked me, because you need to print the clerk Id information */
 	int clerk;
 	pthread_mutex_lock(&mutex_C);
-	if (C == 0) { //clerk 0 awakes me
-		clerk = 0;
-		C = -1;
-	} else if (C == 1) {  //clerk 1 awakes me
-		clerk = 1;
-		C = -1;
+	{
+		if (C == 0) { //clerk 0 awakes me
+			clerk = 0;
+			C = -1;
+		} else if (C == 1) {  //clerk 1 awakes me
+			clerk = 1;
+			C = -1;
+		}
 	}
 	pthread_mutex_unlock(&mutex_C);
 
@@ -119,7 +126,9 @@ void * customer_entry(void * cus_info){
 	/* get the current machine time; */
 	fprintf(stdout, "A clerk finishes serving a customer: end time %.2f, the customer ID %2d, the clerk ID %1d. \n", getTimeDifference(), p_myInfo->user_id, clerk);
 	pthread_mutex_lock(&mutex_clerk[clerk]);
-	pthread_cond_signal(&convar_clerk[clerk]); //Notice the clerk that service is finished, it can serve another customer
+	{
+		pthread_cond_signal(&convar_clerk[clerk]); //Notice the clerk that service is finished, it can serve another customer
+	}
 	pthread_mutex_unlock(&mutex_clerk[clerk]);
 
 	pthread_exit(NULL);
