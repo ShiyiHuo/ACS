@@ -62,24 +62,47 @@ double getTimeDifference() {
 	return cur_secs - init_secs;
 }
 
+int cmpfunc(const void* a, const void* b) {
+	return (*(int*)a - *(int*)b);
+}
+
 int findShortestQueue(){
 	int min_queue_length = MAX_CUSTOMER+1;
-	int qnum;
+	int sorted_queue_length[NQUEUE];
+	memcpy(sorted_queue_length, queue_length, sizeof(queue_length));	//copy of queue_length
+	
+	int min_queue_count;	// number of minimum queues
+	int min_queue_index[]
+	int result;
 	pthread_mutex_lock(&mutex_queue_length);
 	{
 		int i;
+		qsort(sorted_queue_length,5,sizeof(int),cmpfunc);
 		for (i = 0; i < NQUEUE; i++) {
-			//printf("CUSTOMER - queue length of queue %d is %d\n",i, queue_length[i]);
-			if (queue_length[i] < min_queue_length) {
-				min_queue_length = queue_length[i];
-				qnum = i;
+			printf("length%d: %d", i, sorted_queue_length[i]);
+		}
+		min_queue_length = sorted_queue_length[0];
+
+		for (i = 0; i < NQUEUE; i++) {
+			if (queue_length[i] == min_queue_length) {
+				
 			}
 		}
-		queue_length[qnum]++;
+
+		// for (i = 0; i < NQUEUE; i++) {
+		// 	//printf("CUSTOMER - queue length of queue %d is %d\n",i, queue_length[i]);
+		// 	if (queue_length[i] < min_queue_length) {
+		// 		min_queue_length = queue_length[i];
+		// 		//qnum = i;
+		// 	}
+		// }
+
+
+		// queue_length[qnum]++;
 	}
   	pthread_mutex_unlock(&mutex_queue_length);
 
-  	return qnum;
+  	return result;
 }
 
 // function entry for customer threads
@@ -99,7 +122,7 @@ void * customer_entry(void * cus_info){
 		//Now pthread_cond_wait returned, customer was awaked by one of the clerks
 	}
 	pthread_mutex_unlock(&mutex_queue[shortest_queue]);
-	
+
 	p_myInfo->waiting_time_end = getTimeDifference();
 	p_myInfo->waiting_time_total = p_myInfo->waiting_time_end - p_myInfo->waiting_time_start;
 
