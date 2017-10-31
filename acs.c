@@ -1,4 +1,4 @@
-#include <pthread.h>
+ #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,47 +62,56 @@ double getTimeDifference() {
 	return cur_secs - init_secs;
 }
 
-int cmpfunc(const void* a, const void* b) {
-	return (*(int*)a - *(int*)b);
+int pick_random_queue(int array[NQUEUE],int minNum) {
+	int result;
+	printf("pick random number from 0 to %d\n", minNum-1);
+	int index = rand() % (minNum);
+	printf("random index: %d\n",index);
+	result = array[index];
+	printf("value: %d\n", result);
+	return result;
 }
 
 int findShortestQueue(){
 	int min_queue_length = MAX_CUSTOMER+1;
-	int sorted_queue_length[NQUEUE];
-	memcpy(sorted_queue_length, queue_length, sizeof(queue_length));	//copy of queue_length
-	
-	int min_queue_count;	// number of minimum queues
-	int min_queue_index[]
+	int min[NQUEUE] = {-1,-1,-1,-1};	// index of minimum queues
+	int min_num = 0;	// number of minimums
 	int result;
 	pthread_mutex_lock(&mutex_queue_length);
 	{
 		int i;
-		qsort(sorted_queue_length,5,sizeof(int),cmpfunc);
+		//find min queue length
 		for (i = 0; i < NQUEUE; i++) {
-			printf("length%d: %d", i, sorted_queue_length[i]);
+			if (queue_length[i] < min_queue_length) {
+				min_queue_length = queue_length[i];
+			}
 		}
-		min_queue_length = sorted_queue_length[0];
+		printf("min queue length: %d\n", min_queue_length);
 
+		//construct min array
 		for (i = 0; i < NQUEUE; i++) {
-			if (queue_length[i] == min_queue_length) {
-				
+			if(queue_length[i] == min_queue_length) {
+				min[min_num] = i;
+				min_num++;
 			}
 		}
 
-		// for (i = 0; i < NQUEUE; i++) {
-		// 	//printf("CUSTOMER - queue length of queue %d is %d\n",i, queue_length[i]);
-		// 	if (queue_length[i] < min_queue_length) {
-		// 		min_queue_length = queue_length[i];
-		// 		//qnum = i;
-		// 	}
-		// }
+		for (i = 0; i < NQUEUE; i++) {
+			printf("min array %d: %d\n", i, min[i]);
+		}
 
-
-		// queue_length[qnum]++;
+		// result = pick_random_queue(min,min_num);
+		// pick random shortest queue
+		printf("pick random number from 0 to %d\n", min_num-1);
+		int index = rand() % (min_num);
+		printf("random index: %d\n",index);
+		result = min[index];
+		printf("value: %d\n", result);
+		queue_length[result]++;
 	}
-  	pthread_mutex_unlock(&mutex_queue_length);
+	pthread_mutex_unlock(&mutex_queue_length);
 
-  	return result;
+	return result;
 }
 
 // function entry for customer threads
@@ -161,7 +170,12 @@ void * customer_entry(void * cus_info){
 
 int findLongestQueue(int clerkId){
 
-	int i, qnum = 0, max_queue_length = 0;
+	int i;
+	// int qnum = 0;
+	int max_queue_length = 0;
+	int max[NQUEUE] = {-1,-1,-1,-1};	// index of maximum queues
+	int max_num = 0;	// number of maximums
+	int result;
 
 	pthread_mutex_lock(&mutex_C);
 	{
@@ -171,30 +185,73 @@ int findLongestQueue(int clerkId){
 		}
 		pthread_mutex_lock(&mutex_queue_length);
 		{
-			for(i = 0; i < NQUEUE; i++){
+			// for(i = 0; i < NQUEUE; i++){
+			// 	if(i == 0){
+			// 		max_queue_length = queue_length[0];
+			// 	}
+			// 	else{
+			// 		if(max_queue_length < queue_length[i]){
+			// 			max_queue_length = queue_length[i];
+			// 			qnum = i;
+			// 		}
+			// 	}
+			// }
+			// if(max_queue_length > 0){
+			// 	queue_length[qnum]--;
+			// 	C = clerkId;
+			// }
+			// else{
+			// 	qnum = -1;
+			// }
+
+
+			//find max queue length
+			for (i = 0; i < NQUEUE; i++) {
 				if(i == 0){
 					max_queue_length = queue_length[0];
 				}
 				else{
 					if(max_queue_length < queue_length[i]){
 						max_queue_length = queue_length[i];
-						qnum = i;
 					}
 				}
 			}
+			//printf("max queue length: %d\n", max_queue_length);
+
 			if(max_queue_length > 0){
-				queue_length[qnum]--;
+				//construct max array
+				for (i = 0; i < NQUEUE; i++) {
+					if(queue_length[i] == max_queue_length) {
+						max[max_num] = i;
+						max_num++;
+					}
+				}
+
+				for (i = 0; i < NQUEUE; i++) {
+					printf("max array %d: %d\n", i, max[i]);
+				}
+
+				// result = pick_random_queue(min,min_num);
+				// pick random shortest queue
+				printf("pick random number from 0 to %d\n", max_num-1);
+				int index = rand() % (max_num);
+				printf("random index: %d\n",index);
+				result = max[index];
+				printf("value: %d\n", result);
+				queue_length[result]--;
 				C = clerkId;
 			}
 			else{
-				qnum = -1;
+				result = -1;
 			}
+
+
 		}
 		pthread_mutex_unlock(&mutex_queue_length);
 	}
 	pthread_mutex_unlock(&mutex_C);
 
-	return qnum;
+	return result;
 }
 
 void *clerk_entry(void * clerkNum){
