@@ -96,18 +96,8 @@ int findShortestQueue(){
 			}
 		}
 
-		// for (i = 0; i < NQUEUE; i++) {
-		// 	printf("min array %d: %d\n", i, min[i]);
-		// }
-
 		// pick random shortest queue
 		result = pick_random_queue(min,min_num);
-
-		// printf("pick random number from 0 to %d\n", min_num-1);
-		// int index = rand() % (min_num);
-		// printf("random index: %d\n",index);
-		// result = min[index];
-		// printf("value: %d\n", result);
 		queue_length[result]++;
 	}
 	pthread_mutex_unlock(&mutex_queue_length);
@@ -186,26 +176,6 @@ int findLongestQueue(int clerkId){
 		}
 		pthread_mutex_lock(&mutex_queue_length);
 		{
-			// for(i = 0; i < NQUEUE; i++){
-			// 	if(i == 0){
-			// 		max_queue_length = queue_length[0];
-			// 	}
-			// 	else{
-			// 		if(max_queue_length < queue_length[i]){
-			// 			max_queue_length = queue_length[i];
-			// 			qnum = i;
-			// 		}
-			// 	}
-			// }
-			// if(max_queue_length > 0){
-			// 	queue_length[qnum]--;
-			// 	C = clerkId;
-			// }
-			// else{
-			// 	qnum = -1;
-			// }
-
-
 			//find max queue length
 			for (i = 0; i < NQUEUE; i++) {
 				if(i == 0){
@@ -228,18 +198,9 @@ int findLongestQueue(int clerkId){
 					}
 				}
 
-				// for (i = 0; i < NQUEUE; i++) {
-				// 	printf("max array %d: %d\n", i, max[i]);
-				// }
-
-				// pick random shortest queue
+			  // pick random shortest queue
 				result = pick_random_queue(max,max_num);
 
-				// printf("pick random number from 0 to %d\n", max_num-1);
-				// int index = rand() % (max_num);
-				// printf("random index: %d\n",index);
-				// result = max[index];
-				// printf("value: %d\n", result);
 				queue_length[result]--;
 				C = clerkId;
 			}
