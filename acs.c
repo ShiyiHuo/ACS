@@ -228,9 +228,9 @@ int findLongestQueue(int clerkId){
 					}
 				}
 
-				for (i = 0; i < NQUEUE; i++) {
-					printf("max array %d: %d\n", i, max[i]);
-				}
+				// for (i = 0; i < NQUEUE; i++) {
+				// 	printf("max array %d: %d\n", i, max[i]);
+				// }
 
 				// pick random shortest queue
 				result = pick_random_queue(max,max_num);
@@ -332,44 +332,95 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	//initialize all the condition variable and thread lock will be used
+	//initialize all mutexes and condition variables
 	for (i = 0; i < 4; i++) {
-		pthread_mutex_init(&mutex_queue[i], NULL);
-		pthread_cond_init(&convar_queue[i], NULL);
+		if(pthread_mutex_init(&mutex_queue[i], NULL) != 0) {
+      printf("Error: Failed to initialize mutex for queue\n");
+      exit(1);
+    }
+    if(pthread_cond_init(&convar_queue[i], NULL) != 0) {
+      printf("Error: Failed to initialize conditional variable for queue\n");
+      exit(1);
+    }
 	}
 
 	for (i = 0; i < 2; i++) {
-		pthread_mutex_init(&mutex_clerk[i], NULL);
-		pthread_cond_init(&convar_clerk[i], NULL);
+    if(pthread_mutex_init(&mutex_clerk[i], NULL) != 0) {
+      printf("Error: Failed to initialize mutex for clerk\n");
+      exit(1);
+    }
+    if(pthread_cond_init(&convar_clerk[i], NULL) != 0) {
+      printf("Error: Failed to initialize conditional variable for clerk\n");
+      exit(1);
+    }
 	}
 
-	//get global start_time
+  if(pthread_mutex_init(&mutex_queue_length, NULL) != 0) {
+    printf("Error: Failed to initialize mutex for queue length\n");
+    exit(1);
+  }
+  if(pthread_mutex_init(&mutex_C, NULL) != 0) {
+    printf("Error: Failed to initialize mutex for C\n");
+    exit(1);
+  }
+
+	//get global init_time
 	gettimeofday(&init_time,NULL);
 
 	//create clerk and customer threads
 	for(i = 0; i < NCLERK; i++){
-		pthread_create(&clerk_threads[i], NULL, clerk_entry, (void *)&clerk_info[i]);
+		if(pthread_create(&clerk_threads[i], NULL, clerk_entry, (void *)&clerk_info[i]) != 0) {
+      printf("Error: Failed to create clerk thread\n");
+      exit(1);
+    }
 	}
 
 	for(i = 0; i < NCustomers; i++) {
-		pthread_create(&customer_threads[i], NULL, customer_entry, (void *)&customer_list[i]);
+    if(pthread_create(&customer_threads[i], NULL, customer_entry, (void *)&customer_list[i]) != 0) {
+      printf("Error: Failed to create customer thread\n");
+      exit(1);
+    }
 	}
 
 	// wait for all customer threads to terminate
 	for(i = 0; i < NCustomers; i++) {
-		pthread_join(customer_threads[i], NULL);
+    if(pthread_join(customer_threads[i], NULL) != 0) {
+      printf("Error: Failed to join customer thread\n");
+      exit(1);
+    }
 	}
 
 	// destroy mutex & condition variable
 	for (i = 0; i < NQUEUE; i++) {
-		pthread_mutex_destroy(&mutex_queue[i]);
-		pthread_cond_destroy(&convar_queue[i]);
+    if(pthread_mutex_destroy(&mutex_queue[i]) != 0) {
+      printf("Error: Failed to destroy mutex for queue\n");
+      exit(1);
+    }
+    if(pthread_cond_destroy(&convar_queue[i]) != 0) {
+      printf("Error: Failed to destroy conditional variable for queue\n");
+      exit(1);
+    }
 	}
 
 	for (i = 0; i < NCLERK; i++) {
-		pthread_mutex_destroy(&mutex_clerk[i]);
-		pthread_cond_destroy(&convar_clerk[i]);
+    if(pthread_mutex_destroy(&mutex_clerk[i]) != 0) {
+      printf("Error: Failed to destroy mutex for clerk\n");
+      exit(1);
+    }
+    if(pthread_cond_destroy(&convar_clerk[i]) != 0) {
+      printf("Error: Failed to destroy conditional variable for clerk\n");
+      exit(1);
+    }
 	}
+
+  if(pthread_mutex_destroy(&mutex_queue_length) != 0) {
+    printf("Error: Failed to destroy mutex for queue length\n");
+    exit(1);
+  }
+  if(pthread_mutex_destroy(&mutex_C) != 0) {
+    printf("Error: Failed to destroy mutex for C\n");
+    exit(1);
+  }
 
 	//calculate the average waiting time of all customers
 	overall_waiting_time = 0.0;
