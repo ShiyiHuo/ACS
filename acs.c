@@ -64,11 +64,11 @@ double getTimeDifference() {
 
 int pick_random_queue(int array[NQUEUE],int minNum) {
 	int result;
-	printf("pick random number from 0 to %d\n", minNum-1);
+	// printf("pick random number from 0 to %d\n", minNum-1);
 	int index = rand() % (minNum);
-	printf("random index: %d\n",index);
+	// printf("random index: %d\n",index);
 	result = array[index];
-	printf("value: %d\n", result);
+	// printf("value: %d\n", result);
 	return result;
 }
 
@@ -86,7 +86,7 @@ int findShortestQueue(){
 				min_queue_length = queue_length[i];
 			}
 		}
-		printf("min queue length: %d\n", min_queue_length);
+		// printf("min queue length: %d\n", min_queue_length);
 
 		//construct min array
 		for (i = 0; i < NQUEUE; i++) {
@@ -96,9 +96,9 @@ int findShortestQueue(){
 			}
 		}
 
-		for (i = 0; i < NQUEUE; i++) {
-			printf("min array %d: %d\n", i, min[i]);
-		}
+		// for (i = 0; i < NQUEUE; i++) {
+		// 	printf("min array %d: %d\n", i, min[i]);
+		// }
 
 		// pick random shortest queue
 		result = pick_random_queue(min,min_num);
